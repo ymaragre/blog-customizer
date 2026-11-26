@@ -8,7 +8,6 @@ import {
   fontFamilyOptions,
   fontSizeOptions,
   type ArticleStateType,
-  type OptionType,
 } from 'src/constants/articleProps';
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
@@ -20,23 +19,21 @@ import { Text } from 'src/ui/text';
 import styles from './ArticleParamsForm.module.scss';
 
 export type ArticleParamsProps = {
-  currentOptions: ArticleStateType;
   applyOptions: (value: ArticleStateType) => void;
 };
 
 export const ArticleParamsForm = (props: ArticleParamsProps): React.JSX.Element => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [options, setOptions] = useState<ArticleStateType>(props.currentOptions);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [draftOptions, setDraftOptions] =
+    useState<ArticleStateType>(defaultArticleState);
   const paramsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) {
-      setCurrentOptions();
-      return;
-    }
+    if (!isFormOpen) return;
 
     const handleClickOutside = (event: MouseEvent): void => {
-      if (!paramsContainerRef.current?.contains(event.target as Node)) setIsOpen(false);
+      if (!paramsContainerRef.current?.contains(event.target as Node))
+        setIsFormOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -44,20 +41,14 @@ export const ArticleParamsForm = (props: ArticleParamsProps): React.JSX.Element 
     return (): void => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isFormOpen]);
 
-  const setCurrentOptions = (): void => {
-    setOptions({
-      ...props.currentOptions,
-    });
-  };
+  const handleArrowClick = (): void => setIsFormOpen((value) => !value);
 
-  const handleArrowClick = (): void => setIsOpen((value) => !value);
-
-  const handleChange = (optionsKey: keyof ArticleStateType) => {
-    return (selected: OptionType): void => {
-      setOptions({
-        ...options,
+  const handleChange = <K extends keyof ArticleStateType>(optionsKey: K) => {
+    return (selected: ArticleStateType[K]): void => {
+      setDraftOptions({
+        ...draftOptions,
         [optionsKey]: selected,
       });
     };
@@ -65,22 +56,21 @@ export const ArticleParamsForm = (props: ArticleParamsProps): React.JSX.Element 
 
   const handleSubmit = (e: SyntheticEvent): void => {
     e.preventDefault();
-    props.applyOptions({
-      ...options,
-    });
-    setIsOpen(false);
+    props.applyOptions({ ...draftOptions });
+    setIsFormOpen(false);
   };
 
   const handleReset = (e: SyntheticEvent): void => {
     e.preventDefault();
     props.applyOptions({ ...defaultArticleState });
-    setIsOpen(false);
+    setDraftOptions({ ...defaultArticleState });
+    setIsFormOpen(false);
   };
 
   return (
     <div ref={paramsContainerRef}>
-      <ArrowButton isOpen={isOpen} onClick={handleArrowClick} />
-      <aside className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+      <ArrowButton isOpen={isFormOpen} onClick={handleArrowClick} />
+      <aside className={clsx(styles.container, { [styles.container_open]: isFormOpen })}>
         <form className={styles.form} onSubmit={handleSubmit} onReset={handleReset}>
           <Text size={31} weight={800} uppercase>
             Задайте параметры
@@ -88,33 +78,33 @@ export const ArticleParamsForm = (props: ArticleParamsProps): React.JSX.Element 
           <Select
             title="Шрифт"
             options={fontFamilyOptions}
-            selected={options.fontFamilyOption}
+            selected={draftOptions.fontFamilyOption}
             onChange={handleChange('fontFamilyOption')}
           />
           <RadioGroup
             name="fontSizeOptions"
             options={fontSizeOptions}
-            selected={options.fontSizeOption}
+            selected={draftOptions.fontSizeOption}
             title="Размер шрифта"
             onChange={handleChange('fontSizeOption')}
           />
           <Select
             title="Цвет шрифта"
             options={fontColors}
-            selected={options.fontColor}
+            selected={draftOptions.fontColor}
             onChange={handleChange('fontColor')}
           />
           <Separator />
           <Select
             title="Цвет фона"
             options={backgroundColors}
-            selected={options.backgroundColor}
+            selected={draftOptions.backgroundColor}
             onChange={handleChange('backgroundColor')}
           />
           <Select
             title="Ширина контента"
             options={contentWidthArr}
-            selected={options.contentWidth}
+            selected={draftOptions.contentWidth}
             onChange={handleChange('contentWidth')}
           />
           <div className={styles.bottomContainer}>
